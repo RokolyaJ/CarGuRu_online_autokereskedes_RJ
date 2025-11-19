@@ -1,158 +1,266 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { db, auth } from "../firebase";
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-function Admin() {
-  const [cars, setCars] = useState([]);
-  const [car, setCar] = useState({ name: "", price: "", year: "", image: "" });
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function Admin() {
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const checkAdminRole = useCallback(async () => {
-    const user = auth.currentUser;
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
-
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (!userDoc.exists() || userDoc.data().role !== "admin") {
-      alert("Nincs jogosultságod az admin felülethez!");
-      navigate("/");
-    } else {
+    if (user.role !== "ADMIN") {
+      setMessage("Nincs jogosultságod az admin felülethez.");
       setLoading(false);
-      fetchCars();
+      return;
     }
-  }, [navigate]);
+    fetchUsers();
+  }, [user, navigate]);
 
-  useEffect(() => {
-    checkAdminRole();
-  }, [checkAdminRole]);
-
-  const fetchCars = async () => {
-    const querySnapshot = await getDocs(collection(db, "cars"));
-    setCars(querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-  };
-
-  const handleChange = (e) => {
-    setCar({ ...car, [e.target.name]: e.target.value });
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET);
-
+  const authHeader = () => {
     try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: formData }
-      );
-
-      const data = await response.json();
-      if (data.secure_url) {
-        setCar({ ...car, image: data.secure_url });
-      } else {
-        alert("Hiba történt a kép feltöltésekor!");
-      }
-    } catch (error) {
-      console.error("Hiba a feltöltésnél:", error);
+      const stored = localStorage.getItem("user");
+      if (!stored) return {};
+      const parsed = JSON.parse(stored);
+      const token = parsed.token;
+      if (!token) return {};
+      return { Authorization: `Bearer ${token}` };
+    } catch (e) {
+      console.error("Token olvasási hiba:", e);
+      return {};
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!car.name || !car.price || !car.year || !car.image) {
-      alert("Minden mező kitöltése kötelező!");
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:8080/api/admin/users", {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) throw new Error("Nem sikerült betölteni a felhasználókat.");
+      const data = await res.json();
+      setUsers(data);
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openReset = (u) => {
+    setSelectedUser(u);
+    setNewPassword("");
+    setMessage("");
+  };
+
+  const doResetPassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      setMessage("A jelszó legalább 8 karakter kell legyen.");
       return;
     }
 
     try {
-      if (editingId) {
-        await updateDoc(doc(db, "cars", editingId), car);
-        alert("Autó frissítve!");
-      } else {
-        await addDoc(collection(db, "cars"), car);
-        alert("Autó hozzáadva!");
+      const res = await fetch(
+        `http://localhost:8080/api/admin/users/${selectedUser.id}/reset-password`,
+        {
+          method: "PUT",
+          headers: {
+            ...authHeader(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ newPassword }),
+        }
+      );
+
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || "Hiba a jelszó visszaállításakor.");
       }
 
-      setCar({ name: "", price: "", year: "", image: "" });
-      setEditingId(null);
-      fetchCars();
-    } catch (error) {
-      console.error("Hiba:", error);
+      setMessage("Jelszó sikeresen visszaállítva.");
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (err) {
+      setMessage(err.message);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Biztosan törölni akarod ezt az autót?")) {
-      try {
-        await deleteDoc(doc(db, "cars", id));
-        setCars(cars.filter((car) => car.id !== id));
-        alert("Autó törölve!");
-      } catch (error) {
-        console.error("Hiba a törlésnél:", error);
+  const changeRole = async (id, role) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/admin/users/${id}/role?role=${role}`,
+        {
+          method: "PUT",
+          headers: {
+            ...authHeader(),
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || "Hiba a szerep módosításakor.");
       }
+
+      setMessage("Szerep sikeresen módosítva.");
+      fetchUsers();
+    } catch (err) {
+      setMessage(err.message);
     }
   };
 
-  const handleEdit = (car) => {
-    setCar(car);
-    setEditingId(car.id);
-  };
-
-  if (loading) {
-    return <p>Betöltés...</p>;
-  }
+  if (loading) return <p style={{ padding: 24 }}>Betöltés...</p>;
 
   return (
-    <div style={styles.container}>
-      <h2>{editingId ? "Autó szerkesztése" : "Új autó hozzáadása"}</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input type="text" name="name" placeholder="Autó neve" value={car.name} onChange={handleChange} style={styles.input} />
-        <input type="text" name="price" placeholder="Ár (pl. 8 500 000 Ft)" value={car.price} onChange={handleChange} style={styles.input} />
-        <input type="number" name="year" placeholder="Évjárat" value={car.year} onChange={handleChange} style={styles.input} />
-        <input type="file" onChange={handleImageUpload} style={styles.input} />
-        {car.image && <img src={car.image} alt="Feltöltött kép" style={styles.previewImage} />}
-        <button type="submit" style={styles.button}>
-          {editingId ? "Autó frissítése" : "Autó hozzáadása"}
-        </button>
-      </form>
+    <div
+      style={{
+        padding: "100px 24px 40px",
+        maxWidth: "1200px",
+        margin: "0 auto",
+      }}
+    >
+      <h1 style={{ marginBottom: 20 }}>Admin – Felhasználók kezelése</h1>
 
-      <h2>Autók listája</h2>
-      <div style={styles.carList}>
-        {cars.map((car) => (
-          <div key={car.id} style={styles.carCard}>
-            <img src={car.image} alt={car.name} style={styles.carImage} />
-            <h3>{car.name}</h3>
-            <p>Ár: {car.price}</p>
-            <p>Évjárat: {car.year}</p>
-            <button onClick={() => handleEdit(car)} style={styles.editButton}>Szerkesztés</button>
-            <button onClick={() => handleDelete(car.id)} style={styles.deleteButton}>Törlés</button>
-          </div>
-        ))}
+      {message && (
+        <div style={{ margin: "10px 0", color: "red" }}>{message}</div>
+      )}
+
+      <div style={{ overflowX: "auto" }}>
+        <table
+          style={{
+            width: "100%",
+            minWidth: "900px",
+            borderCollapse: "collapse",
+            tableLayout: "auto",
+            backgroundColor: "#fff",
+            color: "#000",
+            borderRadius: "8px",
+          }}
+        >
+          <thead>
+            <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
+              <th style={thStyle}>Név</th>
+              <th style={thStyle}>Email</th>
+              <th style={thStyle}>Telefon</th>
+              <th style={thStyle}>Ország</th>
+              <th style={thStyle}>Szerep</th>
+              <th style={thStyle}>Regisztrálva</th>
+              <th style={thStyle}>Műveletek</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id} style={{ borderBottom: "1px solid #f1f1f1" }}>
+                <td style={tdStyle}>
+                  {u.firstName} {u.lastName}
+                </td>
+                <td style={tdStyle}>{u.email}</td>
+                <td style={tdStyle}>{u.phone || "-"}</td>
+                <td style={tdStyle}>{u.country || "-"}</td>
+                <td style={tdStyle}>{u.role}</td>
+                <td style={tdStyle}>
+                  {new Date(u.createdAt).toLocaleString()}
+                </td>
+                <td style={tdStyle}>
+                  <button onClick={() => openReset(u)} style={btnStyle}>
+                    Jelszó visszaállítás
+                  </button>
+                  {u.role !== "ADMIN" ? (
+                    <button
+                      onClick={() => changeRole(u.id, "ADMIN")}
+                      style={btnStyle}
+                    >
+                      Hozzáad admin
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => changeRole(u.id, "USER")}
+                      style={btnStyle}
+                    >
+                      Eltávolít admin
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+
+      {selectedUser && (
+        <div
+          style={{
+            marginTop: 30,
+            padding: 16,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            backgroundColor: "#fff",
+            maxWidth: 420,
+          }}
+        >
+          <h3>
+            Jelszó visszaállítása: {selectedUser.firstName}{" "}
+            {selectedUser.lastName}
+          </h3>
+          <input
+            type="password"
+            placeholder="Új jelszó"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            style={{
+              padding: 8,
+              width: "100%",
+              margin: "12px 0",
+              borderRadius: 4,
+              border: "1px solid #ccc",
+            }}
+          />
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={doResetPassword} style={btnStyle}>
+              Visszaállít
+            </button>
+            <button onClick={() => setSelectedUser(null)} style={btnStyle}>
+              Mégse
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* 🔹 Stílusok */
-const styles = {
-  container: { textAlign: "center", padding: "20px" },
-  form: { display: "flex", flexDirection: "column", gap: "10px", width: "300px", margin: "0 auto" },
-  input: { padding: "10px", fontSize: "16px", borderRadius: "5px", border: "1px solid #ddd" },
-  previewImage: { width: "100px", height: "100px", objectFit: "cover", marginTop: "10px" },
-  button: { padding: "10px", fontSize: "16px", borderRadius: "5px", border: "none", backgroundColor: "#007bff", color: "white", cursor: "pointer" },
-  carList: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", justifyContent: "center", padding: "20px" },
-  carCard: { border: "1px solid #ddd", borderRadius: "8px", padding: "15px", textAlign: "center" },
-  carImage: { width: "100%", borderRadius: "8px" },
-  editButton: { marginTop: "10px", marginRight: "5px", padding: "8px 15px", background: "#ffc107", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" },
-  deleteButton: { marginTop: "10px", padding: "8px 15px", background: "#ff4d4d", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" },
+const thStyle = {
+  padding: "10px 12px",
+  fontWeight: "bold",
+  whiteSpace: "nowrap",
 };
 
-export default Admin;
+const tdStyle = {
+  padding: "10px 12px",
+  wordBreak: "break-word",
+  verticalAlign: "top",
+};
+
+const btnStyle = {
+  marginRight: 8,
+  padding: "6px 10px",
+  backgroundColor: "#007bff",
+  border: "none",
+  borderRadius: 4,
+  color: "#fff",
+  cursor: "pointer",
+  fontSize: "14px",
+};

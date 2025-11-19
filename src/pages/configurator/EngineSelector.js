@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ConfigContext } from "../../context/ConfigContext";
 
+const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8080";
+
 function EngineSelector() {
-  const { model } = useParams();
+  const { brand, model, variantId } = useParams();
   const navigate = useNavigate();
   const { setSelectedEngine, setSelectedVariant } = useContext(ConfigContext);
 
@@ -12,36 +14,58 @@ function EngineSelector() {
   const [selected, setSelected] = useState(null);
   const [variantData, setVariantData] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [imageAvailable, setImageAvailable] = useState(true);
+
+  useEffect(() => {
+    setImageAvailable(true);
+  }, [variantId, variantData?.imageUrl]);
+
+  const openImageModal = useCallback(() => {
+    const hasImage = Boolean(variantData?.imageUrl) && imageAvailable;
+    if (hasImage) setModalOpen(true);
+  }, [variantData?.imageUrl, imageAvailable]);
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8080/api/engines/by-variant/${model}`)
+      .get(`${API_BASE}/api/engines/by-variant/${variantId}`)
       .then((res) => {
-        setEngines(res.data);
-        if (res.data.length > 0) {
-          setSelected(res.data[0]);
-          setSelectedEngine(res.data[0]); 
+        const uniqueEngines = res.data.filter(
+          (engine, index, self) =>
+            index ===
+            self.findIndex(
+              (e) =>
+                e.name === engine.name &&
+                e.powerKw === engine.powerKw &&
+                e.powerHp === engine.powerHp
+            )
+        );
+        setEngines(uniqueEngines);
+        if (uniqueEngines.length > 0) {
+          setSelected(uniqueEngines[0]);
+          setSelectedEngine(uniqueEngines[0]);
         }
       })
       .catch((err) => console.error("Hiba a motorok lekérésekor:", err));
 
     axios
-      .get(`http://localhost:8080/api/variants/${model}`)
+      .get(`${API_BASE}/api/variants/${variantId}`)
       .then((res) => {
         setVariantData(res.data);
-        setSelectedVariant(res.data); 
+        setSelectedVariant(res.data);
       })
       .catch((err) => console.error("Hiba a változat lekérésekor:", err));
-  }, [model, setSelectedEngine, setSelectedVariant]);
+  }, [variantId, setSelectedEngine, setSelectedVariant]);
 
   const handleSelect = (engine) => {
     setSelected(engine);
-    setSelectedEngine(engine); 
+    setSelectedEngine(engine);
   };
 
   const handleNext = () => {
     if (selected && variantData) {
-      navigate(`/configurator/${variantData.brand.toLowerCase()}/${model}/appearance`);
+      navigate(
+        `/configurator/${variantData.brand?.toLowerCase() || brand}/${model}/${variantId}/appearance`
+      );
     }
   };
 
@@ -56,23 +80,29 @@ function EngineSelector() {
 
   const groupedEngines = groupByFuel(engines);
 
-  const fuelLabels = {
-    Benzin: "Benzin",
-    Gázolaj: "Gázolaj",
-    Elektromos: "Elektromos",
-  };
+  const fuelLabels = { Benzin: "Benzin", Gázolaj: "Gázolaj", Elektromos: "Elektromos" };
+
+  const hasImage = Boolean(variantData?.imageUrl) && imageAvailable;
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.container}>
         <div style={styles.left}>
           <div style={styles.stickyBox}>
-            <img
-              src={variantData?.imageUrl || "/images/car-placeholder.png"}
-              alt="Autó"
-              style={styles.carImage}
-              onClick={() => setModalOpen(true)}
-            />
+            {hasImage ? (
+              <img
+                src={variantData.imageUrl}
+                alt="Autó"
+                style={styles.carImage}
+                onClick={openImageModal}
+                onError={() => setImageAvailable(false)}
+              />
+            ) : (
+              <div style={styles.noImageBox} onClick={(e) => e.stopPropagation()}>
+                <span style={styles.noImageText}>Nincs kép</span>
+              </div>
+            )}
+
             <div style={styles.variantInfo}>
               <h3 style={styles.variantName}>{variantData?.name || "-"}</h3>
               <p style={styles.textSmall}>
@@ -81,7 +111,7 @@ function EngineSelector() {
               <p style={styles.variantPrice}>
                 <strong>Ár:</strong>{" "}
                 {variantData?.price
-                  ? `${variantData.price.toLocaleString()} Ft-tól`
+                  ? `${Number(variantData.price).toLocaleString("hu-HU")} Ft-tól`
                   : "Nincs ár"}
               </p>
             </div>
@@ -90,6 +120,13 @@ function EngineSelector() {
 
         <div style={styles.right}>
           <h2 style={styles.heading}>Motor kiválasztása</h2>
+
+          {engines.length === 0 && (
+            <p style={{ marginTop: 8 }}>
+              Nincs elérhető motor ehhez a változathoz vagy hiba történt a lekéréskor.
+            </p>
+          )}
+
           {Object.entries(groupedEngines).map(([fuelType, items]) => (
             <div key={fuelType}>
               <h3 style={styles.fuelHeader}>{fuelLabels[fuelType] || fuelType}</h3>
@@ -104,12 +141,24 @@ function EngineSelector() {
                     onClick={() => handleSelect(engine)}
                   >
                     <h4 style={styles.cardTitle}>{engine.name}</h4>
-                    <p style={styles.info}><strong>Üzemanyag:</strong> {engine.fuelType}</p>
-                    <p style={styles.info}><strong>Hajtás:</strong> {engine.driveType}</p>
-                    <p style={styles.info}><strong>Teljesítmény:</strong> {engine.powerKw} kW ({engine.powerHp} LE)</p>
-                    <p style={styles.info}><strong>Fogyasztás:</strong> {engine.consumption}</p>
-                    <p style={styles.info}><strong>CO₂:</strong> {engine.co2}</p>
-                    <p style={styles.info}><strong>Ár:</strong> {engine.price.toLocaleString()} Ft-tól</p>
+                    <p style={styles.info}>
+                      <strong>Üzemanyag:</strong> {engine.fuelType}
+                    </p>
+                    <p style={styles.info}>
+                      <strong>Hajtás:</strong> {engine.driveType}
+                    </p>
+                    <p style={styles.info}>
+                      <strong>Teljesítmény:</strong> {engine.powerKw} kW ({engine.powerHp} LE)
+                    </p>
+                    <p style={styles.info}>
+                      <strong>Fogyasztás:</strong> {engine.consumption}
+                    </p>
+                    <p style={styles.info}>
+                      <strong>CO₂:</strong> {engine.co2}
+                    </p>
+                    <p style={styles.info}>
+                      <strong>Ár:</strong> {Number(engine.price).toLocaleString("hu-HU")} Ft-tól
+                    </p>
                   </div>
                 ))}
               </div>
@@ -128,7 +177,7 @@ function EngineSelector() {
               Teljes ajánlott kiskereskedelmi ár<br />
               <strong>
                 {variantData?.price
-                  ? `${variantData.price.toLocaleString()} Ft-tól`
+                  ? `${Number(variantData.price).toLocaleString("hu-HU")} Ft-tól`
                   : "Nincs ár"}
               </strong>
             </div>
@@ -141,12 +190,13 @@ function EngineSelector() {
         </div>
       )}
 
-      {modalOpen && (
+      {modalOpen && hasImage && (
         <div style={styles.modalOverlay} onClick={() => setModalOpen(false)}>
           <img
-            src={variantData?.imageUrl || "/images/car-placeholder.png"}
+            src={variantData.imageUrl}
             alt="Nagyított autó"
             style={styles.modalImage}
+            onError={() => setImageAvailable(false)}
           />
         </div>
       )}
@@ -176,6 +226,24 @@ const styles = {
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     marginBottom: "20px",
     cursor: "pointer",
+  },
+  noImageBox: {
+    width: "100%",
+    height: "320px",
+    borderRadius: "12px",
+    background:
+      "repeating-linear-gradient(135deg, #f0f0f0, #f0f0f0 12px, #e8e8e8 12px, #e8e8e8 24px)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    marginBottom: "20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    userSelect: "none",
+  },
+  noImageText: {
+    color: "#666",
+    fontSize: "18px",
+    fontWeight: 600,
   },
   variantInfo: {
     backgroundColor: "#f9f9f9",

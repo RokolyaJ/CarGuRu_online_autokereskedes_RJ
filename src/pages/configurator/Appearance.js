@@ -4,7 +4,7 @@ import axios from "axios";
 import { ConfigContext } from "../../context/ConfigContext";
 
 function Appearance() {
-  const { brand, model } = useParams(); 
+  const { brand, model, variantId } = useParams(); 
   const [appearances, setAppearances] = useState([]);
   const [selected, setSelected] = useState(null);
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ function Appearance() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8080/api/appearance/variant/${model}`)
+      .get(`http://localhost:8080/api/appearance/variant/${variantId}`) 
       .then((res) => {
         const uniqueColors = [];
         const uniqueAppearances = res.data.filter((item) => {
@@ -29,18 +29,18 @@ function Appearance() {
         }
       })
       .catch((err) => console.error("Hiba a megjelenések lekérésekor:", err));
-  }, [model]);
+  }, [variantId]);
 
   const handleNext = () => {
     if (selected) {
-      setSelectedAppearance({ 
+      setSelectedAppearance({
         color: selected.color,
         wheels: selected.wheel,
         interior: selected.interior,
         price: selected.price,
         imageUrl: selected.imageUrl,
       });
-      navigate(`/configurator/${brand}/${model}/equipment`);
+      navigate(`/configurator/${brand}/${model}/${variantId}/equipment`); 
     }
   };
 
@@ -57,7 +57,7 @@ function Appearance() {
               style={styles.image}
               onError={(e) => {
                 e.target.style.display = "none";
-                console.error(" Nem található kép:", selected.imageUrl);
+                console.error("Nem található kép:", selected.imageUrl);
               }}
             />
           ) : (

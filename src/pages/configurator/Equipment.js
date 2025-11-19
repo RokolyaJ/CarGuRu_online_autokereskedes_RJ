@@ -140,7 +140,7 @@ function Equipment() {
                     }}
                     onClick={() => toggleSelection(item)}
                   >
-                    {isSelected ? "✔ Kiválasztva" : "Kiválasztás"}
+                    {isSelected ? "Kiválasztva" : "Kiválasztás"}
                   </button>
                 </div>
               );

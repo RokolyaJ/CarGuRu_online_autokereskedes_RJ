@@ -1,27 +1,45 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
 
 function CarDetails() {
   const { id } = useParams();
   const [car, setCar] = useState(null);
 
   useEffect(() => {
-    const fetchCar = async () => {
-      try {
-        const carDoc = await getDoc(doc(db, "cars", id));
-        if (carDoc.exists()) {
-          setCar(carDoc.data());
-        } else {
-          console.error("Nincs ilyen autó!");
-        }
-      } catch (error) {
-        console.error("Hiba történt az autó lekérésekor:", error);
+    const dummyCars = [
+      {
+        id: "1",
+        name: "Audi A4",
+        price: "5 200 000 Ft",
+        year: 2018,
+        description: "Megbízható és elegáns Audi A4, kiváló állapotban."
+      },
+      {
+        id: "2",
+        name: "BMW 3",
+        price: "6 800 000 Ft",
+        year: 2019,
+        description: "Sportos BMW 3-as sorozat, erős motorral."
+      },
+      {
+        id: "3",
+        name: "Mercedes C",
+        price: "7 500 000 Ft",
+        year: 2020,
+        description: "Luxus Mercedes C osztály, modern extrákkal."
+      },
+      {
+        id: "4",
+        name: "Volkswagen Golf",
+        price: "3 900 000 Ft",
+        year: 2017,
+        description: "Kompakt és gazdaságos Volkswagen Golf."
       }
-    };
+    ];
 
-    fetchCar();
+
+    const selectedCar = dummyCars.find((car) => car.id === id);
+    setCar(selectedCar || null);
   }, [id]);
 
   if (!car) {

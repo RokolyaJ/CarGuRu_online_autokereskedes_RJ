@@ -4,29 +4,81 @@ import axios from "axios";
 import { ConfigContext } from "../../context/ConfigContext";
 
 function VariantSelector() {
-  const { brand, model } = useParams(); 
+  const { brand, model } = useParams();
   const navigate = useNavigate();
+
   const [variants, setVariants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(null);
-  const scrollRef = useRef(null);
   const [showArrows, setShowArrows] = useState(false);
+  const scrollRef = useRef(null);
 
   const { setSelectedVariant } = useContext(ConfigContext);
+
+  const getToken = () => {
+    const candidates = [
+      localStorage.getItem("token"),
+      localStorage.getItem("auth"),
+      localStorage.getItem("user"),
+      sessionStorage.getItem("token"),
+      sessionStorage.getItem("auth"),
+      sessionStorage.getItem("user"),
+    ].filter(Boolean);
+
+    for (const raw of candidates) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === "string") return parsed;
+        if (parsed?.token) return parsed.token;
+        if (parsed?.accessToken) return parsed.accessToken;
+      } catch {
+        return raw;
+      }
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (!model) return;
 
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      setErrorMsg("Nincs jogosultság. Jelentkezz be újra.");
+      console.error("Hiányzik a JWT token a storage-ból.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+
     axios
-      .get(`http://localhost:8080/api/variants/by-model/${model}`)
+      .get(`http://localhost:8080/api/variants/by-model/${model}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
       .then((res) => {
-        setVariants(res.data);
-        if (res.data.length === 0) {
-          console.warn("Nincsenek elérhető változatok.");
-        }
+        const list = Array.isArray(res.data) ? res.data : [];
+        setVariants(list);
       })
       .catch((err) => {
-        console.error("Hiba a változatok lekérésekor:", err);
-      });
+        if (err.response) {
+          const { status, statusText } = err.response;
+          console.error("API hiba:", status, statusText, err.response.data);
+          if (status === 401 || status === 403) {
+            setErrorMsg("Nincs jogosultság. Jelentkezz be újra.");
+          } else {
+            setErrorMsg("Hiba történt a változatok lekérése közben.");
+          }
+        } else {
+          console.error("Hálózati hiba:", err.message);
+          setErrorMsg("Hálózati hiba történt.");
+        }
+      })
+      .finally(() => setLoading(false));
   }, [model]);
 
   const scroll = (direction) => {
@@ -40,11 +92,12 @@ function VariantSelector() {
   };
 
   const handleNext = () => {
-    if (selectedVariantIndex !== null) {
-      const selected = variants[selectedVariantIndex];
-      setSelectedVariant(selected);
-      navigate(`/configurator/${brand}/${selected.id}/engine`);
-    }
+    if (selectedVariantIndex === null) return;
+    const selected = variants[selectedVariantIndex];
+
+    setSelectedVariant(selected);
+
+    navigate(`/configurator/${brand}/${model}/${selected.id}/engine`);
   };
 
   return (
@@ -56,13 +109,23 @@ function VariantSelector() {
       <h1 style={styles.title}>Változat választó</h1>
       <h2 style={styles.subtitle}>{brand?.toUpperCase() || "MÁRKA"}</h2>
 
-      {variants.length === 0 ? (
-        <p style={styles.noVariants}>Nincsenek elérhető változatok ehhez a modellhez.</p>
-      ) : (
+      {loading && <p>Betöltés…</p>}
+      {!loading && errorMsg && <p style={{ color: "#c00" }}>{errorMsg}</p>}
+
+      {!loading && !errorMsg && variants.length === 0 ? (
+        <p style={styles.noVariants}>
+          Nincsenek elérhető változatok ehhez a modellhez.
+        </p>
+      ) : null}
+
+      {!loading && !errorMsg && variants.length > 0 && (
         <>
           <div style={styles.carouselWrapper}>
             {showArrows && (
-              <button style={{ ...styles.arrow, ...styles.left }} onClick={() => scroll("left")}>
+              <button
+                style={{ ...styles.arrow, ...styles.left }}
+                onClick={() => scroll("left")}
+              >
                 <span style={styles.arrowIcon}>❮</span>
               </button>
             )}
@@ -73,26 +136,65 @@ function VariantSelector() {
                   key={variant.id}
                   style={{
                     ...styles.variantCard,
-                    border: selectedVariantIndex === index ? "2px solid #007bff" : "1px solid #ccc",
+                    border:
+                      selectedVariantIndex === index
+                        ? "2px solid #007bff"
+                        : "1px solid #ccc",
                   }}
                   onClick={() => setSelectedVariantIndex(index)}
                   tabIndex={0}
                   onFocus={(e) => (e.currentTarget.style.outline = "none")}
                 >
-                  <img src={variant.imageUrl} alt={variant.name} style={styles.image} />
+                  <img
+                    src={variant.imageUrl || "/images/default-car.png"}
+                    alt={variant.name}
+                    style={styles.image}
+                  />
                   <h3 style={styles.variantName}>{variant.name}</h3>
-                  <p style={styles.price}>{variant.price.toLocaleString()} Ft</p>
+
+                  {variant.price !== null && variant.price !== undefined && (
+                    <p style={styles.price}>
+                      {Number(variant.price).toLocaleString("hu-HU")} Ft
+                    </p>
+                  )}
+
                   <div style={styles.details}>
-                    <p><strong>Motor:</strong> {variant.power}</p>
-                    <p><strong>Hajtás:</strong> {variant.drive}</p>
-                    <p><strong>Hatótáv:</strong> {variant.range} km</p>
+                    {Array.isArray(variant.fuels) && variant.fuels.length > 0 ? (
+                      <p>
+                        <strong>Üzemanyag:</strong>{" "}
+                        {variant.fuels.join(" / ")}
+                      </p>
+                    ) : (
+                      <p>
+                        <strong>Üzemanyag:</strong> Ismeretlen
+                      </p>
+                    )}
+
+                    {variant.power && (
+                      <p>
+                        <strong>Motor:</strong> {variant.power}
+                      </p>
+                    )}
+                    {variant.drive && (
+                      <p>
+                        <strong>Hajtás:</strong> {variant.drive}
+                      </p>
+                    )}
+                    {variant.range && (
+                      <p>
+                        <strong>Hatótáv:</strong> {variant.range} km
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
             {showArrows && (
-              <button style={{ ...styles.arrow, ...styles.right }} onClick={() => scroll("right")}>
+              <button
+                style={{ ...styles.arrow, ...styles.right }}
+                onClick={() => scroll("right")}
+              >
                 <span style={styles.arrowIcon}>❯</span>
               </button>
             )}
@@ -107,14 +209,23 @@ function VariantSelector() {
                 </span>
               </div>
               <div style={styles.footerCenter}>
-                <span style={styles.footerSubtitle}>Teljes ajánlott kiskereskedelmi ár</span>
+                <span style={styles.footerSubtitle}>
+                  Teljes ajánlott kiskereskedelmi ár
+                </span>
                 <div style={styles.footerPrice}>
-                  {variants[selectedVariantIndex].price.toLocaleString()} Ft-tól
+                  {Number(
+                    variants[selectedVariantIndex].price
+                  ).toLocaleString("hu-HU")}{" "}
+                  Ft-tól
                 </div>
               </div>
               <div style={styles.footerRight}>
-                <button style={styles.footerButtonOutline}>Összehasonlítás</button>
-                <button style={styles.footerButton} onClick={handleNext}>Tovább</button>
+                <button style={styles.footerButtonOutline}>
+                  Összehasonlítás
+                </button>
+                <button style={styles.footerButton} onClick={handleNext}>
+                  Tovább
+                </button>
               </div>
             </div>
           )}

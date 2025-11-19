@@ -19,17 +19,13 @@ public class Configuration {
     private String drive;
     private int range;
     private double consumption;
-
     private String color;
     private String wheels;
     private String interior;
-
     private int totalPrice;
 
     @ElementCollection
     private List<String> equipment;
-
-    
 
     public Long getId() {
         return id;

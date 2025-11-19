@@ -12,7 +12,6 @@ import java.util.List;
 @RequestMapping("/api/models")
 @CrossOrigin(origins = "http://localhost:3000")
 public class ModelController {
-
     private final ModelRepository modelRepository;
     private final BrandRepository brandRepository;
 
@@ -20,11 +19,25 @@ public class ModelController {
         this.modelRepository = modelRepository;
         this.brandRepository = brandRepository;
     }
-
     @GetMapping("/by-brand/{brandName}")
     public List<Model> getModelsByBrand(@PathVariable String brandName) {
         Brand brand = brandRepository.findByNameIgnoreCase(brandName)
-                .orElseThrow(() -> new RuntimeException("Brand not found: " + brandName));
+                .orElseThrow(() -> new RuntimeException("Márka nem található: " + brandName));
         return modelRepository.findByBrand(brand);
+    }
+
+    @GetMapping("/by-brand/{brandName}/filter")
+    public List<Model> getModelsByBrandAndCategory(
+            @PathVariable String brandName,
+            @RequestParam(required = false) String category) {
+
+        Brand brand = brandRepository.findByNameIgnoreCase(brandName)
+                .orElseThrow(() -> new RuntimeException("Márka nem található: " + brandName));
+
+        if (category != null && !category.isBlank()) {
+            return modelRepository.findByBrandAndCategoryIgnoreCase(brand, category);
+        } else {
+            return modelRepository.findByBrand(brand);
+        }
     }
 }
