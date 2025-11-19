@@ -133,11 +133,11 @@ public class SecurityConfig implements WebMvcConfigurer {
 
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
-                    System.out.println("🚫 Auth hiba: " + e.getMessage());
+                    System.out.println("Auth hiba: " + e.getMessage());
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                 })
                 .accessDeniedHandler((req, res, e) -> {
-                    System.out.println("🚫 Access denied: " + e.getMessage());
+                    System.out.println("Access denied: " + e.getMessage());
                     res.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
                 })
             );
