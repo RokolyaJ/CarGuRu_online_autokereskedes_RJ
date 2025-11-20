@@ -2,7 +2,7 @@ import { FiHeart } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "https://carguru.up.railway.app";
 
 export default function FavoriteButton({ carId, size = 26 }) {
   const { user } = useAuth();

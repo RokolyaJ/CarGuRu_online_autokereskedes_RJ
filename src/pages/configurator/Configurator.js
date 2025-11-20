@@ -10,8 +10,8 @@ function Configurator() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8080/api/brands")
+    axios.get("https://carguru.up.railway.app/api/brands")
+
       .then((res) => {
         setBrands(res.data);
         setLoading(false);

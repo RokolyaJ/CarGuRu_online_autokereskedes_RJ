@@ -12,6 +12,8 @@ export default function Admin() {
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
 
+  const BASE_URL = "https://carguru.up.railway.app";
+
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -42,7 +44,7 @@ export default function Admin() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/admin/users", {
+      const res = await fetch(`${BASE_URL}/api/admin/users`, {
         headers: {
           ...authHeader(),
           "Content-Type": "application/json",
@@ -50,6 +52,7 @@ export default function Admin() {
       });
 
       if (!res.ok) throw new Error("Nem sikerült betölteni a felhasználókat.");
+
       const data = await res.json();
       setUsers(data);
     } catch (err) {
@@ -73,7 +76,7 @@ export default function Admin() {
 
     try {
       const res = await fetch(
-        `http://localhost:8080/api/admin/users/${selectedUser.id}/reset-password`,
+        `${BASE_URL}/api/admin/users/${selectedUser.id}/reset-password`,
         {
           method: "PUT",
           headers: {
@@ -100,7 +103,7 @@ export default function Admin() {
   const changeRole = async (id, role) => {
     try {
       const res = await fetch(
-        `http://localhost:8080/api/admin/users/${id}/role?role=${role}`,
+        `${BASE_URL}/api/admin/users/${id}/role?role=${role}`,
         {
           method: "PUT",
           headers: {
@@ -164,20 +167,19 @@ export default function Admin() {
           <tbody>
             {users.map((u) => (
               <tr key={u.id} style={{ borderBottom: "1px solid #f1f1f1" }}>
-                <td style={tdStyle}>
-                  {u.firstName} {u.lastName}
-                </td>
+                <td style={tdStyle}>{u.firstName} {u.lastName}</td>
                 <td style={tdStyle}>{u.email}</td>
                 <td style={tdStyle}>{u.phone || "-"}</td>
                 <td style={tdStyle}>{u.country || "-"}</td>
                 <td style={tdStyle}>{u.role}</td>
                 <td style={tdStyle}>
-                  {new Date(u.createdAt).toLocaleString()}
+                  {new Date(u.createdAt).toLocaleString("hu-HU")}
                 </td>
                 <td style={tdStyle}>
                   <button onClick={() => openReset(u)} style={btnStyle}>
                     Jelszó visszaállítás
                   </button>
+
                   {u.role !== "ADMIN" ? (
                     <button
                       onClick={() => changeRole(u.id, "ADMIN")}
@@ -212,8 +214,7 @@ export default function Admin() {
           }}
         >
           <h3>
-            Jelszó visszaállítása: {selectedUser.firstName}{" "}
-            {selectedUser.lastName}
+            Jelszó visszaállítása: {selectedUser.firstName} {selectedUser.lastName}
           </h3>
           <input
             type="password"

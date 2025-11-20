@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "https://carguru.up.railway.app";
 
 const fmt = (n) =>
   (Number(n) || 0).toLocaleString("hu-HU", { maximumFractionDigits: 0 });

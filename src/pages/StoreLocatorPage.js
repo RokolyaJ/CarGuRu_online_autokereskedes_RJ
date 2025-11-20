@@ -12,7 +12,7 @@ const StoreLocatorPage = () => {
   const [error, setError] = useState(null);
   const mapRef = useRef(null);
 
-  const baseUrl = "http://localhost:8080";
+const baseUrl = "https://carguru.up.railway.app";
 
   useEffect(() => {
     async function fetchStores() {

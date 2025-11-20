@@ -95,7 +95,7 @@ function BrandModels() {
     if (category) params.append("category", category);
     if (type) params.append("type", type);
 
-    const url = `http://localhost:8080/api/variants/by-brand/${brandName}${params.toString() ? `?${params.toString()}` : ""}`;
+const url = `https://carguru.up.railway.app/api/variants/by-brand/${brandName}${params.toString() ? `?${params.toString()}` : ""}`;
 
     fetch(url)
       .then((res) => res.json())

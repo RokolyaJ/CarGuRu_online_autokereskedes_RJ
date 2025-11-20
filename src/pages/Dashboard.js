@@ -17,7 +17,7 @@ export default function Dashboard() {
     setError("");
 
     try {
-      const response = await fetch(`/api/purchases/${vin}`);
+const response = await fetch(`https://carguru.up.railway.app/api/purchases/${vin}`);
       if (!response.ok) throw new Error("Nem található jármű ezzel a VIN-nel.");
       const result = await response.json();
 

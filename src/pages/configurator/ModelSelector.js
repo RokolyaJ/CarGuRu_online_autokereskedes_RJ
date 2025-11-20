@@ -20,8 +20,8 @@ function ModelSelector() {
   const { setSelectedModel } = useContext(ConfigContext);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:8080/api/models/by-brand/${brand}`)
+    axios.get(`https://carguru.up.railway.app/api/models/by-brand/${brand}`)
+
       .then((res) => setModels(res.data))
       .catch((err) => console.error("Hiba a modellek lekérésekor:", err));
   }, [brand]);

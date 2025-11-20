@@ -4,10 +4,9 @@ import axios from "axios";
 import Navbar from "../components/Navbar";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080",
-  withCredentials: false, 
+  baseURL: "https://carguru.up.railway.app",
+  withCredentials: false,
 });
-
 
 export default function UsedMyCarDetails() {
   const { id } = useParams();
@@ -27,7 +26,11 @@ export default function UsedMyCarDetails() {
       .then(({ data }) => {
         if (!alive) return;
         setCar(data);
-        const first = (data.images && data.images[0]) || "/placeholder.png";
+
+        const first = data.images?.length
+          ? `https://carguru.up.railway.app${data.images[0]}`
+          : "/placeholder.png";
+
         setActiveImg(first);
       })
       .catch((e) => setErr(e?.response?.data?.message || "Hiba történt."))
@@ -58,7 +61,7 @@ export default function UsedMyCarDetails() {
     files.forEach((f) => formData.append("files", f));
 
     try {
-      const res = await api.post(`/api/images/upload/${id}`, formData, {
+      await api.post(`/api/images/upload/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Képek feltöltve!");
@@ -69,35 +72,33 @@ export default function UsedMyCarDetails() {
     }
   };
 
- const handleSave = async () => {
-  setSaving(true);
+  const handleSave = async () => {
+    setSaving(true);
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("Nem vagy bejelentkezve!");
-    setSaving(false);
-    return;
-  }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Nem vagy bejelentkezve!");
+      setSaving(false);
+      return;
+    }
 
-  try {
-    await api.put(`/api/usedcars/${id}`, car, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    });
+    try {
+      await api.put(`/api/usedcars/${id}`, car, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    alert("Autó adatai frissítve!");
-    navigate("/mycars");
-
-  } catch (e) {
-    console.error(e);
-    alert("Hiba mentés közben!");
-  } finally {
-    setSaving(false);
-  }
-};
-
+      alert("Autó adatai frissítve!");
+      navigate("/mycars");
+    } catch (e) {
+      console.error(e);
+      alert("Hiba mentés közben!");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -123,9 +124,6 @@ export default function UsedMyCarDetails() {
 
   if (!car) return null;
 
-  const fmtInt = (n) =>
-    typeof n === "number" ? n.toLocaleString("hu-HU") : n || "-";
-
   return (
     <div>
       <Navbar />
@@ -139,19 +137,27 @@ export default function UsedMyCarDetails() {
         <section style={sx.galleryWrap}>
           <div style={sx.thumbs}>
             {(car.images?.length ? car.images : ["/placeholder.png"]).map(
-              (src, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImg(src)}
-                  style={{
-                    ...sx.thumb,
-                    outline:
-                      src === activeImg ? "2px solid #ef530f" : "1px solid #eee",
-                  }}
-                >
-                  <img src={src} alt={`kép ${i}`} style={sx.thumbImg} />
-                </button>
-              )
+              (img, i) => {
+                const src = img.startsWith("/")
+                  ? `https://carguru.up.railway.app${img}`
+                  : img;
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(src)}
+                    style={{
+                      ...sx.thumb,
+                      outline:
+                        src === activeImg
+                          ? "2px solid #ef530f"
+                          : "1px solid #eee",
+                    }}
+                  >
+                    <img src={src} alt={`kép ${i}`} style={sx.thumbImg} />
+                  </button>
+                );
+              }
             )}
           </div>
 
@@ -212,7 +218,6 @@ export default function UsedMyCarDetails() {
     </div>
   );
 }
-
 
 function Input({ label, name, value, onChange }) {
   return (

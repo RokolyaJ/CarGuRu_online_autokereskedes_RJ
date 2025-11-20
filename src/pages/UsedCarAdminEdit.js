@@ -4,9 +4,10 @@ import axios from "axios";
 import Navbar from "../components/Navbar";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "https://carguru.up.railway.app",
   withCredentials: false,
 });
+
 
 export default function UsedCarAdminEdit() {
 

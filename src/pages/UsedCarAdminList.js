@@ -12,12 +12,12 @@ const UsedCarAdminList = () => {
     const token = localStorage.getItem("token");
 
     axios
-      .get("http://localhost:8080/api/usedcars/admin/listings", {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      })
-      .then((res) => setGrouped(res.data))
-      .catch((err) => console.error("Hiba:", err));
+  .get("https://carguru.up.railway.app/api/usedcars/admin/listings", {
+    headers: { Authorization: `Bearer ${token}` },
+    withCredentials: true,
+  })
+  .then((res) => setGrouped(res.data))
+  .catch((err) => console.error("Hiba:", err));
   };
 
   useEffect(() => {
@@ -30,10 +30,11 @@ const UsedCarAdminList = () => {
     if (!window.confirm("Biztosan törlöd ezt a hirdetést?")) return;
 
     try {
-      await axios.delete(`http://localhost:8080/api/usedcars/${carId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
+      await axios.delete(`https://carguru.up.railway.app/api/usedcars/${carId}`, {
+  headers: { Authorization: `Bearer ${token}` },
+  withCredentials: true,
+});
+
 
       loadData();
     } catch (e) {

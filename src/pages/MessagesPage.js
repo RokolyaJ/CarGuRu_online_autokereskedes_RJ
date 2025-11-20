@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "https://carguru.up.railway.app",
 });
 
 export default function MessagesPage() {

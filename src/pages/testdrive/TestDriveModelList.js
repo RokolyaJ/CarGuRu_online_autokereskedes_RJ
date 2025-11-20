@@ -27,27 +27,28 @@ function TestDriveModelList() {
   };
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/stock/full-variants/by-brand/${brandName}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setVariants(data);
-        setFilteredVariants(data);
-        setModels([...new Set(data.map((v) => v.model).filter(Boolean))]);
-      })
-      .catch((err) => console.error("Hiba az autók betöltésekor:", err));
+  fetch(`https://carguru.up.railway.app/api/stock/full-variants/by-brand/${brandName}`)
+    .then((res) => res.json())
+    .then((data) => {
+      setVariants(data);
+      setFilteredVariants(data);
+      setModels([...new Set(data.map((v) => v.model).filter(Boolean))]);
+    })
+    .catch((err) => console.error("Hiba az autók betöltésekor:", err));
 
-    fetch(`http://localhost:8080/api/stock/stores/by-brand/${brandName}`)
-      .then((res) => res.json())
-      .then((stores) => {
-        setDealers(
-          stores.map((store) => ({
-            value: store.storeName,
-            label: `${store.city ?? ""}${store.city ? " - " : ""}${store.storeName}`,
-          }))
-        );
-      })
-      .catch((err) => console.error("Hiba a boltok betöltésekor:", err));
-  }, [brandName]);
+  fetch(`https://carguru.up.railway.app/api/stock/stores/by-brand/${brandName}`)
+    .then((res) => res.json())
+    .then((stores) => {
+      setDealers(
+        stores.map((store) => ({
+          value: store.storeName,
+          label: `${store.city ?? ""}${store.city ? " - " : ""}${store.storeName}`,
+        }))
+      );
+    })
+    .catch((err) => console.error("Hiba a boltok betöltésekor:", err));
+}, [brandName]);
+
 
   useEffect(() => {
     let filtered = [...variants];

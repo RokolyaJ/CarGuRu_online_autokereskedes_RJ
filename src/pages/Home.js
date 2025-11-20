@@ -66,7 +66,7 @@ function Home() {
     return () => clearInterval(interval);
   }, [sliderImages.length]);
 
-
+  
   const styles = {
     container: {
       textAlign: "center",

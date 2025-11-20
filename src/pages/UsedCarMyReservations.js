@@ -9,7 +9,7 @@ const UsedCarMyReservations = () => {
       const token = localStorage.getItem("token");
 
       const res = await axios.get(
-        "http://localhost:8080/api/usedcars/my-reservations",
+        "https://carguru.up.railway.app/api/usedcars/my-reservations",
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -30,7 +30,7 @@ const UsedCarMyReservations = () => {
     try {
       const token = localStorage.getItem("token");
 
-      await axios.delete(`http://localhost:8080/api/usedcars/${id}/reserve`, {
+      await axios.delete(`https://carguru.up.railway.app/api/usedcars/${id}/reserve`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });

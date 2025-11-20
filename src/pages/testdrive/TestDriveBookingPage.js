@@ -93,37 +93,27 @@ console.log("Kiválasztott autó:", selectedCar);
 
  const handleSubmit = async (e) => {
   e.preventDefault();
+
   try {
-   await axios.post("http://localhost:8080/api/test-drive", {
-    vehicleId: selectedCar.id,
+    await axios.post("https://carguru.up.railway.app/api/test-drive", {
+      vehicleId: selectedCar.id,
 
-    brand: selectedCar.brand,
+      brand: selectedCar.make || selectedCar.brand || "Audi",
+      model: selectedCar.model,
+      variant: selectedCar.variant,
 
-    brand: selectedCar.make || selectedCar.brand || "Audi",
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      date: form.date,
 
-    model: selectedCar.model,
-    variant: selectedCar.variant,
-
-    fullName: form.fullName,
-    email: form.email,
-    phone: form.phone,
-    date: form.date,
-
-    price: selectedCar.price,
-    fuel: selectedCar.fuel,
-    powerHp: selectedCar.powerHp,
-    transmission: selectedCar.transmission,
-    storeName: selectedCar.storeName,
-    city: selectedCar.city,
-});
-
-console.log("Küldött adat:", {
-  brand: selectedCar.brand,
-  model: selectedCar.model,
-  variant: selectedCar.variant
-});
-
-
+      price: selectedCar.price,
+      fuel: selectedCar.fuel,
+      powerHp: selectedCar.powerHp,
+      transmission: selectedCar.transmission,
+      storeName: selectedCar.storeName,
+      city: selectedCar.city,
+    });
 
     alert("Sikeres foglalás! Hamarosan emailben kap visszaigazolást.");
   } catch (err) {
@@ -131,6 +121,7 @@ console.log("Küldött adat:", {
     alert("Hiba történt!");
   }
 };
+
 
 
 

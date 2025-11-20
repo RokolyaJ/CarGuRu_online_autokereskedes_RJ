@@ -36,8 +36,8 @@ const tempId = tempIdFromUrl || localStorage.getItem("tempId");
     console.log("Beküldött adat:", parsed);
 
     const carResponse = await axios.post(
-      "http://localhost:8080/api/usedcars",
-      parsed,
+  "https://carguru.up.railway.app/api/usedcars",
+  parsed,
       {
         headers: {
           "Content-Type": "application/json",
@@ -52,7 +52,7 @@ const tempId = tempIdFromUrl || localStorage.getItem("tempId");
 
     if (tempId) {
       await axios.post(
-        `http://localhost:8080/api/images/assign/${tempId}/${newCarId}`,
+        `https://carguru.up.railway.app/api/images/assign/${tempId}/${newCarId}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -87,13 +87,13 @@ const tempId = tempIdFromUrl || localStorage.getItem("tempId");
             setCarData(parsed.car);
           }
 
-          const imgRes = await axios.get(`http://localhost:8080/api/images/temp/${tempId}`);
+          const imgRes = await axios.get(`https://carguru.up.railway.app/api/images/temp/${tempId}`);
           setImages(imgRes.data || []);
         } else if (carId) {
-          const resCar = await axios.get(`http://localhost:8080/api/usedcars/${carId}`);
+          const resCar = await axios.get(`https://carguru.up.railway.app/api/usedcars/${carId}`);
           setCarData(resCar.data);
 
-          const imgRes = await axios.get(`http://localhost:8080/api/images/${carId}`);
+          const imgRes = await axios.get(`https://carguru.up.railway.app/api/images/${carId}`);
           setImages(imgRes.data || []);
         }
       } catch (err) {
@@ -105,7 +105,7 @@ const tempId = tempIdFromUrl || localStorage.getItem("tempId");
 
   useEffect(() => {
     if (images.length > 0) {
-      setSelectedImage(`http://localhost:8080${images[0].image}`);
+      setSelectedImage(`https://carguru.up.railway.app${images[0].image}`);
     }
   }, [images]);
 
@@ -140,7 +140,7 @@ const tempId = tempIdFromUrl || localStorage.getItem("tempId");
               style={{ marginTop: "10px", display: "flex", flexWrap: "wrap" }}
             >
               {images.map((img, index) => {
-                const fullImgUrl = `http://localhost:8080${img.image}`;
+                const fullImgUrl = `https://carguru.up.railway.app${img.image}`;
                 return (
                   <img
                     key={index}

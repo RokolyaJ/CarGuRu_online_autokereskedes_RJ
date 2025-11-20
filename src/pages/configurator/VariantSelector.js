@@ -53,13 +53,12 @@ function VariantSelector() {
     setLoading(true);
     setErrorMsg("");
 
-    axios
-      .get(`http://localhost:8080/api/variants/by-model/${model}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+    axios.get(`https://carguru.up.railway.app/api/variants/by-model/${model}`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  }
+})
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : [];
         setVariants(list);

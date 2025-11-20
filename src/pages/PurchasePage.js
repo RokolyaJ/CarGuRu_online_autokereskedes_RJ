@@ -1,3 +1,5 @@
+const baseUrl = "https://carguru.up.railway.app";
+
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -9,7 +11,6 @@ export default function PurchasePage() {
 
 const [userId, setUserId] = useState(null);
   const [carId, setCarId] = useState(carData?.id || 1);
-  const baseUrl = "http://localhost:8080";
 
   const [order, setOrder] = useState(null);
   const [payment, setPayment] = useState("CARD");
@@ -183,7 +184,7 @@ useEffect(() => {
   async function fetchProfile() {
     if (!user?.token) return;
     try {
-      const res = await fetch("http://localhost:8080/api/users/me", {
+const res = await fetch(`${baseUrl}/api/users/me`, {
         headers: {
           Authorization: `Bearer ${user.token}`,
           Accept: "application/json",
@@ -235,7 +236,7 @@ async function handleSaveProfile() {
   };
 
   try {
-    const res = await fetch("http://localhost:8080/api/users/me/update", {
+    const res = await fetch(`${baseUrl}/api/users/me/update`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -1071,11 +1072,11 @@ async function saveInsurance() {
                 fontWeight: 500,
               }}
             >
-              {d.status === "PENDING" ? "⏳ Jóváhagyás alatt" : "✅ Elfogadva"}
+              {d.status === "PENDING" ? "Jóváhagyás alatt" : "Elfogadva"}
             </span>
           </div>
           <a
-            href={`http://localhost:8080${d.url}`}
+href={`${baseUrl}${d.url}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{

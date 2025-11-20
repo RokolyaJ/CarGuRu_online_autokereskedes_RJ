@@ -45,7 +45,7 @@ const [serverEstimatedPrice, setServerEstimatedPrice] = useState(null);
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/tradein/user/${userId}`,
+        `https://cargururj-production.up.railway.app/api/tradein/user/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           credentials: "include",
@@ -56,7 +56,7 @@ const [serverEstimatedPrice, setServerEstimatedPrice] = useState(null);
         setCars(data);
       }
     } catch (err) {
-      console.error("❌ Hiba az autók lekérésekor:", err);
+      console.error("Hiba az autók lekérésekor:", err);
     }
   };
 
@@ -204,8 +204,8 @@ const handleSubmit = async (e) => {
 
   try {
     const url = editingId
-      ? `http://localhost:8080/api/tradein/update/${editingId}`
-      : "http://localhost:8080/api/tradein/create";
+      ? `https://cargururj-production.up.railway.app/api/tradein/update/${editingId}`
+      : "https://cargururj-production.up.railway.app/api/tradein/create";
     const method = editingId ? "PUT" : "POST";
 
     const response = await fetch(url, {
@@ -281,7 +281,7 @@ const handleDelete = async (id) => {
   }
 
   try {
-    const res = await fetch(`http://localhost:8080/api/tradein/delete/${id}`, {
+const res = await fetch(`https://carguru.up.railway.app/api/tradein/delete/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
       credentials: "include",
@@ -327,8 +327,9 @@ const handleDelete = async (id) => {
     description: car.description || "",
   });
   setPreviewUrls(
-    car.images?.map((img) => `http://localhost:8080${img.url}`) || []
-  );
+  car.images?.map((img) => `https://carguru.up.railway.app${img.url}`) || []
+);
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 const handleAccept = async (id) => {
@@ -343,7 +344,7 @@ const handleAccept = async (id) => {
       return;
     }
 
-    const res = await fetch(`http://localhost:8080/api/tradein/${id}/accept`, {
+const res = await fetch(`https://carguru.up.railway.app/api/tradein/${id}/accept`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       credentials: "include",
@@ -359,7 +360,7 @@ const handleAccept = async (id) => {
 
     await loadCars();
 
-    const profileRes = await fetch("http://localhost:8080/api/users/me", {
+const profileRes = await fetch("https://carguru.up.railway.app/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
       credentials: "include",
     });
@@ -685,10 +686,10 @@ const handleDecline = async () => {
     {cars.map((car) => (
       <div key={car.id} className="saved-car-card">
         <div className="saved-car-image">
-          <ImageRotator
-            images={car.images?.map((img) => `http://localhost:8080${img.url}`)}
-            alt={`${car.make} ${car.model}`}
-          />
+          <ImageRotator 
+   images={car.images?.map((img) => `https://carguru.up.railway.app${img.url}`)}
+/>
+
         </div>
 
         <div className="saved-car-info">

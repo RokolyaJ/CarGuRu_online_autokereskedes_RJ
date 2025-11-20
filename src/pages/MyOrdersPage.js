@@ -7,7 +7,7 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const baseUrl = "http://localhost:8080";
+const baseUrl = "https://carguru.up.railway.app";
 
   useEffect(() => {
     if (!user || !user.id) {

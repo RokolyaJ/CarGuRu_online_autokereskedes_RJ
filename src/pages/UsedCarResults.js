@@ -641,7 +641,7 @@ export default function UsedCarResults() {
     console.log("SZŰRÉS INDULT", filters)
 
     try {
-      const response = await fetch("http://localhost:8080/api/usedcars/search", {
+const response = await fetch("https://carguru.up.railway.app/api/usedcars/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

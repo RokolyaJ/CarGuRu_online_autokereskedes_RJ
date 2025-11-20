@@ -25,62 +25,99 @@ export default function VariantDetails() {
   const [showDots, setShowDots] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const [vRes, eRes] = await Promise.all([
-          axios.get(`http://localhost:8080/api/variants/${variantId}`),
-          axios.get(`http://localhost:8080/api/engines/by-variant/${variantId}`),
-        ]);
+  let cancelled = false;
 
-        if (!cancelled) {
-          const v = vRes.data;
-          setVariant(v);
-          setExteriorImages(
-  typeof v.exteriorImages === "string"
-    ? JSON.parse(v.exteriorImages)
-    : Array.isArray(v.exteriorImages)
-    ? v.exteriorImages
-    : v.exteriorImageUrl
-    ? [v.exteriorImageUrl]
-    : []
-);
+  async function load() {
+    setLoading(true);
 
-          setInteriorImages(v.interiorImages || []);
-          const cg = v.colorGalleries || {};
-          setColorGalleries(cg);
-          const firstColor = Object.keys(cg)[0] || null;
-          setActiveColor(firstColor);
-          setColorImages(firstColor ? cg[firstColor] || [] : []);
-          setColorIndex(0);
+    try {
+      const [vRes, eRes] = await Promise.all([
+        axios.get(`https://carguru.up.railway.app/api/variants/${variantId}`),
+        axios.get(`https://carguru.up.railway.app/api/engines/by-variant/${variantId}`)
+      ]);
 
-          const uniqEngines = (eRes.data || []).filter(
-            (eng, i, arr) =>
-              i ===
-              arr.findIndex(
-                (x) =>
-                  x.name === eng.name &&
-                  x.fuelType === eng.fuelType &&
-                  x.powerKw === eng.powerKw &&
-                  x.powerHp === eng.powerHp
-              )
-          );
-          setEngines(uniqEngines);
-        }
-      } catch (err) {
-        console.error(err);
-        if (!cancelled)
-          setErrorMsg("Nem sikerült betölteni a variáns adatait.");
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        const v = vRes.data;
+
+        setVariant(v);
+
+        // --- Külső képek javítása ---
+        const extImg = (
+          typeof v.exteriorImages === "string"
+            ? JSON.parse(v.exteriorImages)
+            : Array.isArray(v.exteriorImages)
+            ? v.exteriorImages
+            : v.exteriorImageUrl
+            ? [v.exteriorImageUrl]
+            : []
+        ).map(img =>
+          img.startsWith("/")
+            ? `https://carguru.up.railway.app${img}`
+            : img
+        );
+
+        setExteriorImages(extImg);
+
+        // --- Belső képek javítása ---
+        setInteriorImages(
+          (v.interiorImages || []).map(img =>
+            img.startsWith("/")
+              ? `https://carguru.up.railway.app${img}`
+              : img
+          )
+        );
+
+        // --- Szín galériák javítása ---
+        const cg = v.colorGalleries || {};
+
+        const fixedCg = Object.fromEntries(
+          Object.entries(cg).map(([key, arr]) => [
+            key,
+            arr.map(img =>
+              img.startsWith("/")
+                ? `https://carguru.up.railway.app${img}`
+                : img
+            )
+          ])
+        );
+
+        setColorGalleries(fixedCg);
+
+        const firstColor = Object.keys(fixedCg)[0] || null;
+        setActiveColor(firstColor);
+        setColorImages(firstColor ? fixedCg[firstColor] || [] : []);
+        setColorIndex(0);
+
+        // --- Motor adatok egyedivé tétele ---
+        const uniqEngines = (eRes.data || []).filter(
+          (eng, i, arr) =>
+            i ===
+            arr.findIndex(
+              (x) =>
+                x.name === eng.name &&
+                x.fuelType === eng.fuelType &&
+                x.powerKw === eng.powerKw &&
+                x.powerHp === eng.powerHp
+            )
+        );
+
+        setEngines(uniqEngines);
       }
+    } catch (err) {
+      console.error(err);
+      if (!cancelled) setErrorMsg("Nem sikerült betölteni a variáns adatait.");
+    } finally {
+      if (!cancelled) setLoading(false);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [variantId]);
+  }
+
+  load();
+
+  return () => {
+    cancelled = true;
+  };
+}, [variantId]);
+
   useEffect(() => {
     const handleScroll = () => {
       const backBtn = document.getElementById("back-btn");

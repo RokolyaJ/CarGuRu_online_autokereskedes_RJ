@@ -11,8 +11,7 @@ function Appearance() {
   const { setSelectedAppearance } = useContext(ConfigContext);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:8080/api/appearance/variant/${variantId}`) 
+    axios.get(`https://carguru.up.railway.app/api/appearance/variant/${variantId}`)
       .then((res) => {
         const uniqueColors = [];
         const uniqueAppearances = res.data.filter((item) => {

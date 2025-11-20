@@ -39,8 +39,8 @@ function Equipment() {
       }
     };
 
-    axios
-      .get(`http://localhost:8080/api/equipment/brand/${getBrandId(brand)}`)
+   axios.get(`https://carguru.up.railway.app/api/equipment/brand/${getBrandId(brand)}`)
+
       .then((res) => {
         setEquipmentList(res.data);
         const availableCategories = [...new Set(res.data.map((e) => e.category))];

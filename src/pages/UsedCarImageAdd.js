@@ -29,10 +29,10 @@ useEffect(() => {
   const fetchImages = async () => {
     try {
       if (carId) {
-        const response = await axios.get(`http://localhost:8080/api/images/${carId}`);
+const response = await axios.get(`https://carguru.up.railway.app/api/images/${carId}`);
         setUploadedImages(response.data || []);
       } else if (tempId) {
-        const response = await axios.get(`http://localhost:8080/api/images/temp/${tempId}`);
+const response = await axios.get(`https://carguru.up.railway.app/api/images/temp/${tempId}`);
         setUploadedImages(response.data || []);
       }
     } catch (err) {
@@ -74,14 +74,14 @@ const handleUpload = async () => {
     const token = localStorage.getItem("token");
 
     if (carId) {
-      await axios.post(`http://localhost:8080/api/images/upload/${carId}`, formData, {
+await axios.post(`https://carguru.up.railway.app/api/images/upload/${carId}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       });
     } else {
-      await axios.post(`http://localhost:8080/api/images/temp/${tempId}`, formData, {
+await axios.post(`https://carguru.up.railway.app/api/images/temp/${tempId}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -132,7 +132,7 @@ const handleUpload = async () => {
             <div className="preview">
               {uploadedImages.map((img, index) => (
                 <div key={index} className="preview-item">
-                  <img src={`http://localhost:8080${img.image}`} alt={`uploaded-${index}`} />
+                  <img src={`https://carguru.up.railway.app${img.image}`} alt={`uploaded-${index}`} />
                 </div>
               ))}
             </div>

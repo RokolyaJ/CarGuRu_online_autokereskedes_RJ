@@ -13,7 +13,7 @@ export default function ChatWindow({ otherUserId, userName }) {
 
   const scrollRef = useRef(null);
 
-  const apiBase = "http://localhost:8080";
+const apiBase = "https://carguru.up.railway.app";
 
   const loadConversation = async () => {
     if (!token || !otherUserId) return;

@@ -4,9 +4,10 @@ import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080",
-  withCredentials: true            
+  baseURL: "https://carguru.up.railway.app",
+  withCredentials: true
 });
+
 
 export default function UsedCars() {
   const [filters, setFilters] = useState({
@@ -48,7 +49,7 @@ engineId: "",
 
   });
 
-  
+
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [engines, setEngines] = useState([]);

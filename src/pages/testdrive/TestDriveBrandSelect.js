@@ -6,7 +6,7 @@ function TestDriveBrandSelect() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/brands")
+fetch("https://carguru.up.railway.app/api/brands")
       .then(res => res.json())
       .then(data => setBrands(data))
       .catch(err => console.error("Hiba a márkák betöltésekor:", err));

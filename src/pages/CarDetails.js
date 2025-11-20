@@ -2,55 +2,37 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 function CarDetails() {
-  const { id } = useParams();
+  const { id } = useParams(); // id = VIN
   const [car, setCar] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const dummyCars = [
-      {
-        id: "1",
-        name: "Audi A4",
-        price: "5 200 000 Ft",
-        year: 2018,
-        description: "Megbízható és elegáns Audi A4, kiváló állapotban."
-      },
-      {
-        id: "2",
-        name: "BMW 3",
-        price: "6 800 000 Ft",
-        year: 2019,
-        description: "Sportos BMW 3-as sorozat, erős motorral."
-      },
-      {
-        id: "3",
-        name: "Mercedes C",
-        price: "7 500 000 Ft",
-        year: 2020,
-        description: "Luxus Mercedes C osztály, modern extrákkal."
-      },
-      {
-        id: "4",
-        name: "Volkswagen Golf",
-        price: "3 900 000 Ft",
-        year: 2017,
-        description: "Kompakt és gazdaságos Volkswagen Golf."
-      }
-    ];
-
-
-    const selectedCar = dummyCars.find((car) => car.id === id);
-    setCar(selectedCar || null);
+    fetch(`https://carguru.up.railway.app/api/stock/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCar(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Hiba a jármű lekérésekor:", err);
+        setLoading(false);
+      });
   }, [id]);
 
-  if (!car) {
-    return <p>Betöltés...</p>;
-  }
+  if (loading) return <p>Betöltés...</p>;
+  if (!car) return <p>Nem található jármű.</p>;
 
   return (
     <div style={styles.container}>
-      <h2>{car.name}</h2>
-      <img src={car.image} alt={car.name} style={styles.image} />
-      <p><strong>Ár:</strong> {car.price}</p>
+      <h2>{car.modelName}</h2>
+
+      <img
+        src={car.imageUrl || "/images/default-car.png"}
+        alt={car.modelName}
+        style={styles.image}
+      />
+
+      <p><strong>Ár:</strong> {car.price?.toLocaleString()} Ft</p>
       <p><strong>Évjárat:</strong> {car.year}</p>
       <p><strong>Leírás:</strong> {car.description || "Nincs megadva"}</p>
     </div>
